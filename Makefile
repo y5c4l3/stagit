@@ -18,7 +18,7 @@ STAGIT_CPPFLAGS = -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE
 
 # Uncomment to enable workaround for older libgit2 which don't support this
 # option. This workaround will be removed in the future *pinky promise*.
-#STAGIT_CFLAGS += -DGIT_OPT_SET_OWNER_VALIDATION=-1
+STAGIT_CFLAGS += -DGIT_OPT_SET_OWNER_VALIDATION=-1
 
 SRC = \
 	stagit.c\
