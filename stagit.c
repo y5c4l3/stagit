@@ -1255,8 +1255,12 @@ main(int argc, char *argv[])
 	}
 #endif
 
-	if (git_repository_open_ext(&repo, repodir,
-		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {
+	int rc = git_repository_open_ext(&repo, repodir,
+		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL);
+	if (rc < 0) {
+		rc = git_repository_open_bare(&repo, repodir);
+	}
+	if (rc < 0) {
 		fprintf(stderr, "%s: cannot open repository\n", argv[0]);
 		return 1;
 	}
