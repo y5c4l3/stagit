@@ -1,0 +1,64 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types:
+      - created
+
+jobs:
+  release:
+    name: Create Release and Upload Binaries
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Dependencies (libgit2)
+        if: ${{ false }}
+        run: sudo apt-get update && sudo apt-get install libgit2-dev
+      - name: Install Dependencies (OpenSSL 1.1)
+        if: ${{ false }}
+        run: |
+          sudo apt-get update && sudo apt-get install libssl1.1
+          sudo ln -sf $(find /usr/lib -name libssl.so.1.1) $(find /usr/lib -name libssl.so) 
+          sudo ln -sf $(find /usr/lib -name libcrypto.so.1.1) $(find /usr/lib -name libcrypto.so)
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev libssh2-1-dev libcurl4-openssl-dev libssl-dev
+      - name: Build OpenSSL 1.1
+        run: |
+          wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1u/openssl-1.1.1u.tar.gz
+          tar xzvf openssl-1.1.1u.tar.gz
+          cd openssl-1.1.1u
+          ./config
+          make -j4
+          sudo make install
+      - name: Build libgit2
+        run: |
+          wget https://github.com/libgit2/libgit2/archive/refs/tags/v1.8.1.tar.gz
+          tar xzvf v1.8.1.tar.gz
+          cd libgit2-1.8.1
+          mkdir build
+          cmake -B build -DBUILD_SHARED_LIBS=OFF .
+          cmake --build ./build -j4
+          sudo cmake --build ./build --target install
+      - name: Build Binaries
+        run: |
+          make LIBGIT_LIB='-L/usr/local/lib /usr/local/lib/libgit2.a -lcurl -lz -lssl -lcrypto -lpcre -lpthread'
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "release_tag=UserBuild_$(date +'%Y-%m-%d_%H-%M')" >> $GITHUB_OUTPUT
+      - name: Upload Binaries
+        id: upload_binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: |
+            stagit
+            stagit-index
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
